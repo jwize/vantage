@@ -1,6 +1,8 @@
 ﻿@page "/linked-chat"
 @inject ChatClient _client
 @inject StateService _stateService
+@inject IJSRuntime JS
+
 @implements IDisposable
 
 @using Vantage.Web.Models
@@ -9,20 +11,23 @@
 @using Vantage.Web.Services
 
 <div class="container">
+
     <div class="box box-upper">
         @foreach (var comment in _comments)
         {
-            <div class="@(GetTextDirection(comment.User.Direction)) chat-bubble" >
-                @comment.Content
-                @comment.User.Name
+            <div class="@(GetTextDirection(comment.User.Direction)) chat-bubble">
+                <small>@comment.User.Name:</small> @comment.Content
+
             </div>
         }
     </div>
+
     <div class="box box-lower form-floating;">
         <div>
-            <textarea @bind="_comment" @bind:event="oninput" class="form-control" placeholder="Enter message here"></textarea>
+            <textarea @bind="_comment" @bind:event="oninput" class="form-control" placeholder="Enter message here"
+                      @onkeydown="@Enter"></textarea>
         </div>
-        
+
         <div class="text-right">
 
             <button type="button" class="btn btn-primary add-comment"
@@ -32,7 +37,6 @@
             </button>
         </div>
     </div>
-    
 </div>
 
 @code
@@ -51,7 +55,9 @@
         var result = await _client.GetComments.ExecuteAsync();
         result.EnsureNoErrors();
 
+        // watch for comments added
         BeginCommentWatcher();
+        await SetInitialUser();
 
         if (result.Data != null)
         {
@@ -62,7 +68,7 @@
                 User = new User
                 {
                     Name = t?.User?.Name,
-                    Direction =  t?.User?.Name == "Jaime" ? Direction.Left : Direction.Right
+                    Direction = t?.User?.Name == "Jaime" ? Direction.Left : Direction.Right
                 }
             }).ToList();
         }
@@ -81,23 +87,38 @@
                 .Subscribe(x =>
                 {
                     var comment = x.Data?.Created;
+
+                    // update comment for all clients
                     _comments.Add(new Comment
                     {
                         Id = comment?.Id ?? 0,
                         User = new User()
                         {
                             Id = comment?.UserId ?? 0,
-                            Name =  comment?.User?.Name
+                            Name = comment?.User?.Name,
+                            Direction = comment?.User?.Name == "Jaime" ? Direction.Left : Direction.Right
                         },
                         Content = comment?.Content,
-                        
                     });
                     StateHasChanged();
                 });
         });
     }
 
-    public async Task OnShareState(object state)
+    private async Task SetInitialUser()
+    {
+        var result = await _client.GetUsers.ExecuteAsync();
+        result.EnsureNoErrors();
+
+        if (result.Data == null)
+            throw new Exception("No users were available");
+
+        var first = result.Data.User.First();
+        _user = new User {Direction = Direction.Left, Id = first?.Id ?? 0, Name = first.Name};
+        StateHasChanged();
+
+    }
+    private async Task OnShareState(object state)
     {
         if (state is not User user) return;
         _user = user;
@@ -117,9 +138,18 @@
         var result = await _client.SendMessage.ExecuteAsync(comment, _user.Id);
         result.EnsureNoErrors();
 
-        // reset values 
+        // reset values
         _comment = string.Empty;
 
         StateHasChanged();
     }
+    private void Enter(KeyboardEventArgs e)
+    {
+        // allow enter key to send comments
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            OnAddCommentAsync(_comment);
+        }
+    }
+
 }
