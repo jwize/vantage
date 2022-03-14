@@ -1,0 +1,90 @@
+﻿query GetUsers {
+	user { 
+		id
+		name
+	}
+}
+
+query GetComments { 
+	comment { 
+		 id
+		  userId
+			content
+			dateCreated
+			user { 
+				id
+				name
+			}
+	}
+}
+
+
+mutation SendMessage($comment : String! $userId : Int!) {
+	addComment(input: { content : $comment, userId : $userId})
+	{ 
+		comment { 
+			content
+		}
+	}
+}
+
+subscription OnAddedComment {
+ created : onCommentCreated { 
+			id
+		  userId
+			content
+			dateCreated
+			user { 
+				id
+				name
+			}
+	}
+}
+
+	
+
+
+query GetReplacementLinks { 
+  replacementLink {
+    keyword
+    hyperlink
+  }
+}
+
+mutation AddReplacement($keyword : String! $hyperlink : String!)
+{
+   addReplacementLink(input : { keyword: $keyword hyperlink : $hyperlink })	
+	{
+		replacementLink { 
+			...linkText
+		}
+	}
+}
+
+mutation RemoveReplacementLink ($keyword:String!) { 
+	removeReplacementLink(keyword: $keyword)
+	{
+		replacementLink { 
+			...linkText
+		}
+	}
+}
+
+subscription OnReplacementLinkCreated { 
+	created: onReplacementLinkCreated { 
+	 ...linkText
+	}
+}
+
+subscription OnReplacementLinkRemoved {
+	 removed : onReplacementLinkRemoved {  
+	 ...linkText
+	}
+}
+
+fragment linkText on ReplacementLink { 
+	keyword
+	hyperlink
+}
+
+	

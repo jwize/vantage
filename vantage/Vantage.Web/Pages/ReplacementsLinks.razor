@@ -1,0 +1,182 @@
+﻿@page "/replacement-links"
+@using StrawberryShake
+@using System.Text.RegularExpressions
+@using StrawberryShake.Extensions
+@using Vantage.Web.Models
+@inject ChatClient _client
+
+<div hidden="@(_ready)">
+    Loading replacements links...
+</div>
+
+<div class="col-12" hidden="@(!_ready)">
+    <h1>Replacement Links</h1>
+
+    <section class="replacments">
+        <ul class="replacement-link">
+            @foreach (var link in links)
+            {
+                <li class="replacement-item">
+
+                    <div>
+                        <span>@link.Keyword</span>
+                    </div>
+                    <div>
+                        <span>@link.Hyperlink</span>
+                    </div>
+                    <div class="input-group-append">
+                        <button type="button"
+                                @onclick="() => OnDeleteButtonCancelled(link.Keyword)"
+                                class="btn" hidden="@(!_warned.Contains(link.Keyword))">
+                            cancel
+                        </button>
+                        <button type="button"
+                                @onclick="() => OnRemoveButtonClicked(link.Keyword)"
+                                class="btn @(GetDeleteButtonClass(link.Keyword))">
+                            @(_warned.Contains(link.Keyword) ? "confirm" : "remove")
+                        </button>
+
+                    </div>
+
+                </li>
+
+            }
+            <li></li>
+        </ul>
+        
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">Keyword</span>
+            </div>
+            <input type="text" @bind="_keyword"
+                   @bind:event="oninput"
+                   class="form-control" aria-label="Keyword (to match text for replacement)">
+        </div>
+
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">Hyperlink</span>
+            </div>
+            <input type="text" @bind="_hyperlink"
+                   @bind:event="oninput"
+                   class="form-control" aria-label="Hyperlink (to the destination address)">
+        </div>
+        
+        <div class="text-right">
+            <button type="button" class="btn btn-primary col-3"
+                    @onclick="() => OnReplaceLinkClicked(_keyword, _hyperlink)"
+                    disabled="@(!_isValid)">
+                Add Replacement
+            </button>
+        </div>
+
+    </section>
+
+</div>
+
+@code {
+
+    private List<ReplacementLink> links = new();
+    private string _keyword { get; set; }
+    private string _hyperlink { get; set; }
+
+    private bool _isValid =>
+        !string.IsNullOrEmpty(_keyword) &&
+        !string.IsNullOrEmpty(_hyperlink) &&
+        Regex.IsMatch(_hyperlink, RegularExpressions.Hyperlink, RegexOptions.Compiled | RegexOptions.IgnoreCase) && // must be valid url
+        links.All(l => l.Keyword != _keyword); // must not be a duplicate keyword
+
+    private bool _ready { get; set; }
+
+    public List<string> _warned { get; set; } = new();
+
+
+    public bool IsWarned(string keyword)
+    {
+        return _warned.Contains(keyword);
+    }
+
+    private string GetDeleteButtonClass(string keyword)
+    {
+        return _warned.Contains(keyword) ? "btn-success" : "btn-danger";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        BeginHyperlinkWatcher();
+
+        var result = await _client.GetReplacementLinks.ExecuteAsync();
+        result.EnsureNoErrors();
+
+        if (result.Data != null)
+        {
+            var data = Array.Empty<IGetReplacementLinks_ReplacementLink>();
+            links = (result.Data.ReplacementLink ?? data).Select(t => new ReplacementLink
+            {
+                Hyperlink = t?.Hyperlink,
+                Keyword =  t?.Keyword
+            }).ToList();
+        }
+
+        _ready = true;
+        StateHasChanged();
+    }
+
+    private void BeginHyperlinkWatcher()
+    {
+        Task.Run(() =>
+        {
+            _client.OnReplacementLinkCreated.Watch()
+                  .Subscribe(x =>
+                  {
+                      var link = x.Data?.Created;
+                      links.Add(new ReplacementLink { Hyperlink = link?.Hyperlink, Keyword = link?.Keyword});
+                      StateHasChanged();
+                  });
+        });
+
+        Task.Run(() =>
+        {
+            _client.OnReplacementLinkRemoved.Watch()
+                .Subscribe(x =>
+                {
+                    var removed = x.Data?.Removed;
+                    var link = links.Single(l => l.Keyword == removed.Keyword);
+                    links.Remove(link);
+                    StateHasChanged();
+                });
+        });
+    }
+    
+
+    protected async void OnRemoveButtonClicked(string keyword)
+    {
+        if (_warned.Contains(keyword))
+        {
+            var result = await _client.RemoveReplacementLink.ExecuteAsync(keyword);
+            result.EnsureNoErrors();
+
+            return;
+        }
+        _warned.Add(keyword);
+        StateHasChanged();
+    }
+
+    protected void OnDeleteButtonCancelled(string keyword)
+    {
+        _warned.Remove(keyword);
+        StateHasChanged();
+    }
+
+    protected async Task OnReplaceLinkClicked(string keyword, string hyperlink)
+    {
+        var result = await _client.AddReplacement.ExecuteAsync(keyword, hyperlink);
+        result.EnsureNoErrors();
+
+        // reset values for next insert
+        _keyword = string.Empty;
+        _hyperlink = string.Empty;
+
+        StateHasChanged();
+    }
+}

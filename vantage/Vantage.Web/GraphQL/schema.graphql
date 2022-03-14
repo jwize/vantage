@@ -1,0 +1,194 @@
+﻿schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+
+"Represents users in the system that can take part in the communications."
+type User {
+  "Represents id for user lookup."
+  id: Int!
+  "Represents the name of the user taking part in the communication."
+  name: String
+  "Represents a list of comments authored by the user"
+  comments: [Comment]
+}
+
+"Represents a comment authored by a user"
+type Comment {
+  "This is the user to which the comment belongs"
+  user: User
+  id: Int!
+  content: String
+  dateCreated: DateTime!
+  userId: Int!
+}
+
+"Represents replacement link to replace value of comment with."
+type ReplacementLink {
+  "Represents id for user lookup."
+  id: Int!
+  "Represents the keyword for searching hyperlinks in comment text."
+  keyword: String
+  "Represents the hyperlink that will wrap the keyword when a keyword match is found in comment text."
+  hyperlink: String
+}
+
+type Mutation {
+  addUser(input: AddUserInput): AddUserPayload
+  addComment(input: AddCommentInput): AddCommentPayload
+  addReplacementLink(input: AddReplacementLinkInput): ReplacementRecords
+  removeReplacementLink(keyword: String): RemoveReplacementLinkPayload
+}
+
+type Subscription {
+  onCommentCreated: Comment
+  onReplacementLinkCreated: ReplacementLink
+  onReplacementLinkRemoved: ReplacementLink
+}
+
+"This represents the API for a linked text messaging application."
+type Query {
+  user(where: UserFilterInput order: [UserSortInput!]): [User]
+  comment(where: CommentFilterInput order: [CommentSortInput!]): [Comment]
+  replacementLink(where: ReplacementLinkFilterInput order: [ReplacementLinkSortInput!]): [ReplacementLink]
+}
+
+"The `DateTime` scalar represents an ISO-8601 compliant date time type."
+scalar DateTime
+
+input UserFilterInput {
+  and: [UserFilterInput!]
+  or: [UserFilterInput!]
+  id: ComparableInt32OperationFilterInput
+  name: StringOperationFilterInput
+  comments: ListFilterInputTypeOfCommentFilterInput
+}
+
+input UserSortInput {
+  id: SortEnumType
+  name: SortEnumType
+}
+
+"Represents comments that are authored by users in the communication."
+input CommentFilterInput {
+  and: [CommentFilterInput!]
+  or: [CommentFilterInput!]
+  id: ComparableInt32OperationFilterInput
+  content: StringOperationFilterInput
+  dateCreated: ComparableDateTimeOperationFilterInput
+  user: UserFilterInput
+  userId: ComparableInt32OperationFilterInput
+}
+
+"Represents comments that are authored by users in the communication."
+input CommentSortInput {
+  id: SortEnumType
+  content: SortEnumType
+  dateCreated: SortEnumType
+  user: UserSortInput
+  userId: SortEnumType
+}
+
+"Represents replacement hyperlinks for keyword replacement"
+input ReplacementLinkFilterInput {
+  and: [ReplacementLinkFilterInput!]
+  or: [ReplacementLinkFilterInput!]
+  id: ComparableInt32OperationFilterInput
+  keyword: StringOperationFilterInput
+  hyperlink: StringOperationFilterInput
+}
+
+"Represents replacement hyperlinks for keyword replacement"
+input ReplacementLinkSortInput {
+  id: SortEnumType
+  keyword: SortEnumType
+  hyperlink: SortEnumType
+}
+
+input ComparableInt32OperationFilterInput {
+  eq: Int
+  neq: Int
+  in: [Int!]
+  nin: [Int!]
+  gt: Int
+  ngt: Int
+  gte: Int
+  ngte: Int
+  lt: Int
+  nlt: Int
+  lte: Int
+  nlte: Int
+}
+
+input StringOperationFilterInput {
+  and: [StringOperationFilterInput!]
+  or: [StringOperationFilterInput!]
+  eq: String
+  neq: String
+  contains: String
+  ncontains: String
+  in: [String]
+  nin: [String]
+  startsWith: String
+  nstartsWith: String
+  endsWith: String
+  nendsWith: String
+}
+
+input ListFilterInputTypeOfCommentFilterInput {
+  all: CommentFilterInput
+  none: CommentFilterInput
+  some: CommentFilterInput
+  any: Boolean
+}
+
+enum SortEnumType {
+  ASC
+  DESC
+}
+
+input ComparableDateTimeOperationFilterInput {
+  eq: DateTime
+  neq: DateTime
+  in: [DateTime!]
+  nin: [DateTime!]
+  gt: DateTime
+  ngt: DateTime
+  gte: DateTime
+  ngte: DateTime
+  lt: DateTime
+  nlt: DateTime
+  lte: DateTime
+  nlte: DateTime
+}
+
+input AddCommentInput {
+  content: String
+  userId: Int!
+}
+
+type AddCommentPayload {
+  comment: Comment
+}
+
+input AddUserInput {
+  name: String
+}
+
+type AddUserPayload {
+  user: User
+}
+
+type ReplacementRecords {
+  replacementLink: ReplacementLink
+}
+
+input AddReplacementLinkInput {
+  keyword: String
+  hyperlink: String
+}
+
+type RemoveReplacementLinkPayload {
+  replacementLink: ReplacementLink
+}

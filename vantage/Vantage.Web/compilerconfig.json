@@ -1,0 +1,18 @@
+﻿[
+  {
+    "outputFile": "wwwroot/css/app.css",
+    "inputFile": "wwwroot/css/app.scss"
+  },
+  {
+    "outputFile": "Pages/ReplacementLinks.razor.css",
+    "inputFile": "Pages/ReplacementLinks.razor.scss"
+  },
+  {
+    "outputFile": "Pages/ReplacementsLinks.razor.css",
+    "inputFile": "Pages/ReplacementsLinks.razor.scss"
+  },
+  {
+    "outputFile": "Pages/LinkedChat.razor.css",
+    "inputFile": "Pages/LinkedChat.razor.scss"
+  }
+]

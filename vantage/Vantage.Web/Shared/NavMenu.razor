@@ -1,0 +1,111 @@
+﻿@using StrawberryShake
+@using Vantage.Web.Models
+@using Vantage.Web.Services
+@implements IDisposable
+@inject ChatClient _client
+@inject StateService _stateService
+
+<div class="top-row pl-4 navbar navbar-dark">
+    <a class="navbar-brand" href="">Vantage.Web</a>
+    <button class="navbar-toggler" @onclick="ToggleNavMenu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+</div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <ul class="nav flex-column">
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> Home
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="linked-chat">
+                <span class="oi oi-chat" aria-hidden="true"></span> Linked Chat
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="replacement-links">
+                <span class="oi oi-puzzle-piece" aria-hidden="true"></span> Replacement Links
+            </NavLink>
+        </li>
+        @foreach (var user in _users)
+        {
+            <li class="nav-item px-3 @GetSelectedClass(user.Name)">
+                <NavLink class="nav-link"  @onclick="() => SelectUserAsync(user)">
+                    <span class="oi oi-person" aria-hidden="true"></span> @user.Name
+                </NavLink>
+            </li>
+        }
+
+    </ul>
+</div>
+
+@code {
+
+    private User _selected { get; set; }
+    public List<User> _users = new();
+    private bool collapseNavMenu = true;
+
+    private string GetSelectedClass(string name)
+    {
+        return _selected?.Name == name ? "selected" : String.Empty;
+    }
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private string value { get; set; }
+
+    public async Task AddValue()
+    {
+        await _stateService.ShareStateAsync(value);
+    }
+
+    public async Task OnShareState(object state)
+    {
+        if (state.ToString() != StateService.LinkedChat) return;
+
+        _users.Clear();
+
+        var result = await _client.GetUsers.ExecuteAsync();
+        result.EnsureNoErrors();
+
+        if (result.Data != null)
+        {
+            
+            var data = Array.Empty<IGetUsers_User_User>();
+            _users = (result.Data.User ?? data).Select(t => new User()
+            {
+                Id = t?.Id ?? 0,
+                Name= t?.Name,
+                Direction = t?.Name == "Jaime" ? Direction.Left : Direction.Right
+            }).ToList();
+            _selected = _users.First();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override void OnInitialized()
+    {
+        _stateService.Notify += OnShareState;
+    }
+
+    public void Dispose()
+    {
+        _stateService.Notify -= OnShareState;
+        _users.Clear();
+    }
+
+
+    private async void SelectUserAsync(User user)
+    {
+        _selected = user;
+        await _stateService.ShareStateAsync(user);
+    }
+
+}
