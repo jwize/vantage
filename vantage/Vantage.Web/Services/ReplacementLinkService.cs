@@ -9,7 +9,6 @@ using Vantage.Web.Models;
 
 namespace Vantage.Web.Services
 {
-    
     public class ReplacementLinkService
     {
         public ImmutableList<ReplacementLink> ReplacementLinks { get; set; }
@@ -21,7 +20,7 @@ namespace Vantage.Web.Services
             _serviceScopeFactory = serviceScopeFactory;
             
         }
-        public async Task InitializeReplacementLinks()
+        public async Task Initialize()
         {
             var client = _serviceScopeFactory.CreateScope().ServiceProvider.GetService<IChatClient>() ?? throw new Exception("Client cannot be null");
 
