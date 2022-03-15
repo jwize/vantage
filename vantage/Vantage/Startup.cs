@@ -1,4 +1,5 @@
 using GraphQL.Server.Ui.Voyager;
+using HotChocolate.Types;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -33,6 +34,10 @@ namespace Vantage
                         .AllowAnyHeader()
                 ))
                 .AddGraphQLServer()
+                .ModifyOptions(options =>
+                {
+                    options.DefaultBindingBehavior = BindingBehavior.Explicit;
+                })
                 .AddType<UserType>()
                 .AddType<CommentType>()
                 .AddType<ReplacementLinkType>()

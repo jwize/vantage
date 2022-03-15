@@ -97,17 +97,17 @@
         result.EnsureNoErrors();
 
         if (result.Data == null) return;
-        var data = Array.Empty<IGetComments_Comment>();
+        
 
-        _comments = (result.Data.Comment ?? data).Select(t =>
+        _comments = result.Data.Comment!.Select(t =>
         {
             var comment = new Comment
             {
-                Content = t?.Content,
+                Content = t!.Content,
                 User = new User
                 {
-                    Name = t?.User?.Name,
-                    Direction = t?.User?.Name == "Jaime" ? Direction.Left : Direction.Right
+                    Name = t.User!.Name,
+                    Direction = t.User!.Name == "Jaime" ? Direction.Left : Direction.Right
                 }
             };
             _replacementLinkService.Hash(comment.Content);
@@ -173,7 +173,7 @@
             throw new Exception("No users were available");
 
         var first = result?.Data?.User?.First();
-        _user = new User { Direction = Direction.Left, Id = first?.Id ?? 0, Name = first?.Name };
+        _user = new User { Direction = Direction.Left, Id = first?.Id, Name = first?.Name };
         StateHasChanged();
 
     }
@@ -194,7 +194,7 @@
     {
         if (!_isValid) return;
 
-        var result = await _client.SendMessage.ExecuteAsync(comment, _user.Id);
+        var result = await _client.SendMessage.ExecuteAsync(comment, System.Convert.ToInt32(_user.Id)); // TODO Seems like this should be generated as string
         result.EnsureNoErrors();
 
         // reset values

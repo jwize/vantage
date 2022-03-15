@@ -13,7 +13,7 @@ namespace Vantage.GraphQL
     public class Mutation
     {
         [UseDbContext(typeof(Database))]
-        public async Task<AddUserPayload> AddUserAsync(UserRecords input, [ScopedService] Database database)
+        public async Task<AddUserPayload> AddUserAsync(AddUserInput input, [ScopedService] Database database)
         {
             var user = new User
             {
@@ -25,7 +25,7 @@ namespace Vantage.GraphQL
         }
 
         [UseDbContext(typeof(Database))]
-        public async Task<AddCommentPayload> AddCommentAsync(CommentRecords input, [ScopedService] Database database
+        public async Task<AddCommentPayload> AddCommentAsync(AddCommentInput input, [ScopedService] Database database
         ,[Service] ITopicEventSender eventSender, CancellationToken cancellationToken)
         {
             var comment = new Comment

@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using HotChocolate.Types;
+using HotChocolate.Types.Relay;
 
 namespace Vantage.Models
 {
     public class User 
     {
-        public int Id { get; set; }
+        [ID] public int Id { get; set; }
         public string Name { get; set; }
         public ICollection<Comment> Comments { get; set; }
     }

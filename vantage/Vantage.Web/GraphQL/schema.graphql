@@ -7,7 +7,7 @@
 "Represents users in the system that can take part in the communications."
 type User {
   "Represents id for user lookup."
-  id: Int!
+  id: ID!
   "Represents the name of the user taking part in the communication."
   name: String
   "Represents a list of comments authored by the user"
@@ -18,16 +18,16 @@ type User {
 type Comment {
   "This is the user to which the comment belongs"
   user: User
-  id: Int!
+  id: ID!
   content: String
   dateCreated: DateTime!
-  userId: Int!
+  userId: ID!
 }
 
 "Represents replacement link to replace value of comment with."
 type ReplacementLink {
   "Represents id for user lookup."
-  id: Int!
+  id: ID!
   "Represents the keyword for searching hyperlinks in comment text."
   keyword: String
   "Represents the hyperlink that will wrap the keyword when a keyword match is found in comment text."
@@ -36,7 +36,7 @@ type ReplacementLink {
 
 type Mutation {
   addUser(input: UserRecordsInput): AddUserPayload
-  addComment(input: CommentRecordsInput): AddCommentPayload
+  addComment(input: AddCommentInput): AddCommentPayload
   addReplacementLink(input: AddReplacementLinkInput): AddReplacementLinkPayload
   removeReplacementLink(keyword: String): RemoveReplacementLinkPayload
 }
@@ -60,7 +60,7 @@ scalar DateTime
 input UserFilterInput {
   and: [UserFilterInput!]
   or: [UserFilterInput!]
-  id: ComparableInt32OperationFilterInput
+  id: IdOperationFilterInput
   name: StringOperationFilterInput
   comments: ListFilterInputTypeOfCommentFilterInput
 }
@@ -74,11 +74,11 @@ input UserSortInput {
 input CommentFilterInput {
   and: [CommentFilterInput!]
   or: [CommentFilterInput!]
-  id: ComparableInt32OperationFilterInput
+  id: IdOperationFilterInput
   content: StringOperationFilterInput
   dateCreated: ComparableDateTimeOperationFilterInput
   user: UserFilterInput
-  userId: ComparableInt32OperationFilterInput
+  userId: IdOperationFilterInput
 }
 
 "Represents comments that are authored by users in the communication."
@@ -94,7 +94,7 @@ input CommentSortInput {
 input ReplacementLinkFilterInput {
   and: [ReplacementLinkFilterInput!]
   or: [ReplacementLinkFilterInput!]
-  id: ComparableInt32OperationFilterInput
+  id: IdOperationFilterInput
   keyword: StringOperationFilterInput
   hyperlink: StringOperationFilterInput
 }
@@ -106,19 +106,11 @@ input ReplacementLinkSortInput {
   hyperlink: SortEnumType
 }
 
-input ComparableInt32OperationFilterInput {
-  eq: Int
-  neq: Int
-  in: [Int!]
-  nin: [Int!]
-  gt: Int
-  ngt: Int
-  gte: Int
-  ngte: Int
-  lt: Int
-  nlt: Int
-  lte: Int
-  nlte: Int
+input IdOperationFilterInput {
+  eq: ID
+  neq: ID
+  in: [ID]
+  nin: [ID]
 }
 
 input StringOperationFilterInput {
@@ -163,7 +155,7 @@ input ComparableDateTimeOperationFilterInput {
   nlte: DateTime
 }
 
-input CommentRecordsInput {
+input AddCommentInput {
   content: String
   userId: Int!
 }

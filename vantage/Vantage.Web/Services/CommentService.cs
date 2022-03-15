@@ -14,10 +14,10 @@ namespace Vantage.Web.Services
             var added = new Comment
             {
                 Id = comment.Id,
-                Content = comment?.Content,
+                Content = comment.Content,
                 User = new User
                 {
-                    Id = comment?.UserId ?? 0,
+                    Id = comment.UserId,
                     Name = comment.User?.Name,
                     Direction = comment.User?.Name == "Jaime" ? Direction.Left : Direction.Right
                 }

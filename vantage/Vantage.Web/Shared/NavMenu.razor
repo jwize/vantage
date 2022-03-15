@@ -82,9 +82,9 @@
             var data = Array.Empty<IGetUsers_User_User>();
             _users = (result.Data.User ?? data).Select(t => new User()
             {
-                Id = t?.Id ?? 0,
-                Name= t?.Name,
-                Direction = t?.Name == "Jaime" ? Direction.Left : Direction.Right
+                Id = t!.Id,
+                Name= t.Name,
+                Direction = t.Name == "Jaime" ? Direction.Left : Direction.Right
             }).ToList();
             _selected = _users.First();
         }
