@@ -164,7 +164,7 @@
         var output = content;
         foreach (var replacement in replacements)
         {
-            output = output.Replace(replacement.Keyword, $"<a href='{replacement.Hyperlink}'>{replacement.Keyword}</a>");
+            output = output.Replace(replacement.Keyword, $"<a target='_blank' href='{replacement.Hyperlink}'>{replacement.Keyword}</a>");
         }
         _hashedComments[hash] = output;
     }
