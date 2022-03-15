@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using HotChocolate.Types;
 
 namespace Vantage.Web.Services
 {
