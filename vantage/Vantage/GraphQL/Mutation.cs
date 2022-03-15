@@ -65,7 +65,7 @@ namespace Vantage.GraphQL
         public async Task<RemoveReplacementLinkPayload> RemoveReplacementLinkAsync(string keyword,
             [ScopedService] Database database, [Service] ITopicEventSender eventSender, CancellationToken cancellationToken)
         {
-            var removed = await database.ReplacementLinks.SingleAsync(r => r.Keyword == keyword, cancellationToken);
+            var removed = await database.ReplacementLinks.FirstOrDefaultAsync(r => r.Keyword == keyword, cancellationToken);
             database.Remove(removed);
             await database.SaveChangesAsync(cancellationToken);
 

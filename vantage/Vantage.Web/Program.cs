@@ -22,7 +22,7 @@ namespace Vantage.Web
                     new Uri($"wss://localhost:{Port}/graphql"));
 
             services.AddScoped<StateService>();
-
+            services.AddSingleton<ReplacementLinkService>();
             services.AddScoped(sp => new HttpClient {BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)})
                     .AddChatClient()
                     .ConfigureHttpClient(x => x.BaseAddress = new Uri($"https://localhost:{Port}/graphql"));

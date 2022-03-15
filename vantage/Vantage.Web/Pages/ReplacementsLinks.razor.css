@@ -65,3 +65,6 @@
     text-overflow: ellipsis; }
   .replacement-item > div {
     flex: 1; }
+
+.btn-primary {
+  min-width: 10em; }

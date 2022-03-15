@@ -1,6 +1,7 @@
 ﻿@page "/linked-chat"
 @inject ChatClient _client
 @inject StateService _stateService
+@inject ReplacementLinkService _replacementLinkService
 @inject IJSRuntime JS
 
 @implements IDisposable
@@ -10,15 +11,28 @@
 @using StrawberryShake.Extensions
 @using Vantage.Web.Services
 
+
 <div class="container">
+    <div hidden="@(_ready)">
+        Loading chat messaging...
+    </div>
 
     <div class="box box-upper">
         @foreach (var comment in _comments)
         {
-            <div class="@(GetTextDirection(comment.User.Direction)) chat-bubble">
-                <small>@comment.User.Name:</small> @comment.Content
-
-            </div>
+            @if (comment.User.Direction == Direction.Left)
+            {
+                <div class="@(GetTextDirection(comment.User.Direction)) chat-bubble">
+                    <small>@comment.User.Name:</small> @(new MarkupString(GetReplacement(comment.Content)))
+                </div>
+            }
+            else
+            {
+                <div class="@(GetTextDirection(comment.User.Direction)) chat-bubble">
+                    @(new MarkupString(GetReplacement(comment.Content))) <small>: @comment.User.Name</small>
+                </div>
+            }
+            
         }
     </div>
 
@@ -45,24 +59,48 @@
     private List<Comment> _comments = new();
     private string _comment { get; set; }
     private bool _isValid => !string.IsNullOrEmpty(_comment);
+    private bool _ready { get; set; }
+    private Dictionary<int, string> _hashedComments = new();
 
     private string GetTextDirection(Direction direction)
     {
         return direction == Direction.Left ? "text-left" : "text-right";
     }
+
     protected override async Task OnInitializedAsync()
     {
+        // watch for comments added
+        await _replacementLinkService.InitializeReplacementLinks();
+
+        BeginCommentWatcher();
+        BeginReplacementLinkWatcher();
+
+        await SetInitialUser();
+
+        RefreshComments();
+
+        await _stateService.ShareStateAsync(StateService.LinkedChat);
+        _stateService.Notify += OnShareState;
+
+        _ready = true;
+
+        StateHasChanged();
+    }
+
+
+    private async void RefreshComments()
+    {
+        _comments.Clear();
+
         var result = await _client.GetComments.ExecuteAsync();
         result.EnsureNoErrors();
 
-        // watch for comments added
-        BeginCommentWatcher();
-        await SetInitialUser();
+        if (result.Data == null) return;
+        var data = Array.Empty<IGetComments_Comment>();
 
-        if (result.Data != null)
+        _comments = (result.Data.Comment ?? data).Select(t =>
         {
-            var data = Array.Empty<IGetComments_Comment>();
-            _comments = (result.Data.Comment ?? data).Select(t => new Comment
+            var comment = new Comment
             {
                 Content = t?.Content,
                 User = new User
@@ -70,14 +108,14 @@
                     Name = t?.User?.Name,
                     Direction = t?.User?.Name == "Jaime" ? Direction.Left : Direction.Right
                 }
-            }).ToList();
-        }
+            };
+            HashReplacement(comment.Content);
+            return comment;
 
-        await _stateService.ShareStateAsync(StateService.LinkedChat);
-        _stateService.Notify += OnShareState;
-
+        }).ToList();
         StateHasChanged();
     }
+
 
     private void BeginCommentWatcher()
     {
@@ -88,8 +126,7 @@
                 {
                     var comment = x.Data?.Created;
 
-                    // update comment for all clients
-                    _comments.Add(new Comment
+                    var added = new Comment
                     {
                         Id = comment?.Id ?? 0,
                         User = new User()
@@ -98,11 +135,88 @@
                             Name = comment?.User?.Name,
                             Direction = comment?.User?.Name == "Jaime" ? Direction.Left : Direction.Right
                         },
-                        Content = comment?.Content,
-                    });
+                        Content = comment?.Content
+                    };
+
+                    HashReplacement(comment?.Content);
+
+                    _comments.Add(added);
                     StateHasChanged();
                 });
         });
+    }
+
+    private string GetReplacement(string content)
+    {
+        var hash = content.GetHashCode();
+        return _hashedComments[hash];
+    }
+
+    private void HashReplacement(string content)
+    {
+        var hash = content.GetHashCode();
+        if (!_hashedComments.ContainsKey(hash))
+        {
+            _hashedComments.Add(hash, string.Empty);
+        }
+
+        var replacements = _replacementLinkService.ReplacementLinks;
+        var output = content;
+        foreach (var replacement in replacements)
+        {
+            output = output.Replace(replacement.Keyword, $"<a href='{replacement.Hyperlink}'>{replacement.Keyword}</a>");
+        }
+        _hashedComments[hash] = output;
+    }
+
+    private void BeginReplacementLinkWatcher()
+    {
+        Task.Run(() =>
+        {
+            _client.OnReplacementLinkCreated.Watch()
+                .Subscribe(x =>
+                {
+                    var link = x?.Data?.Created;
+                    _replacementLinkService.ReplacementLinks.Add(new ReplacementLink()
+                    {
+                        Keyword = link?.Keyword,
+                        Hyperlink = link?.Hyperlink
+                    });
+                    RefreshReplacements();
+                    StateHasChanged();
+                });
+        });
+
+        Task.Run(() =>
+        {
+            _client.OnReplacementLinkRemoved.Watch()
+                .Subscribe(x =>
+                {
+                    var keyword = x.Data?.Removed?.Keyword;
+                    RemovedReplacementsWithKeyword(keyword);
+                    RefreshReplacements();
+                    StateHasChanged();
+                });
+        });
+    }
+
+    private void RemovedReplacementsWithKeyword(string keyword)
+    {
+        var removed = _hashedComments.Where(h => h.Value.ToLower().Contains(keyword.ToLower())).Select(h => h.Key);
+        foreach (var hash in removed)
+        {
+            _hashedComments.Remove(hash);
+        }
+    }
+
+    private void RefreshReplacements()
+    {
+        foreach (var comment in _comments)
+        {
+            HashReplacement(comment.Content);
+        }
+
+        StateHasChanged();
     }
 
     private async Task SetInitialUser()
@@ -113,8 +227,8 @@
         if (result.Data == null)
             throw new Exception("No users were available");
 
-        var first = result.Data.User.First();
-        _user = new User {Direction = Direction.Left, Id = first?.Id ?? 0, Name = first.Name};
+        var first = result?.Data?.User?.First();
+        _user = new User { Direction = Direction.Left, Id = first?.Id ?? 0, Name = first?.Name };
         StateHasChanged();
 
     }
@@ -151,5 +265,4 @@
             OnAddCommentAsync(_comment);
         }
     }
-
 }
