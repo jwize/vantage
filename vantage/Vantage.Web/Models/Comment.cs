@@ -7,8 +7,5 @@ namespace Vantage.Web.Models
         public string Content { get; set; }
         public DateTime DateCreated { get; set; }
         public User User { get; set; }
-        
-
-
     }
 }
