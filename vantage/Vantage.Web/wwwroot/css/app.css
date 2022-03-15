@@ -90,3 +90,10 @@ a, .btn-link {
   background-position-y: 30em;
   background-image: url(/img/chocolate.jpg);
   background-repeat: initial; }
+
+/* HACK THIS IS NOT CACHE BUSTING PROPERLY IN THE NAV CSS */
+.replacement-link > li:first-child > div:first-child {
+  width: 8em; }
+
+.nav-link {
+  cursor: pointer; }

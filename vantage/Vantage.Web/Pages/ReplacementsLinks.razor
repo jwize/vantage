@@ -11,11 +11,22 @@
 
 <div class="col-12" hidden="@(!_ready)">
     <h1>Replacement Links</h1>
+    <p><strong>Any time a text message is sent the contents are checked for matches in the following list. Matches will be linked to the given http address.</strong></p>
 
     <section class="replacments">
         <ul class="replacement-link">
+            <li>
+                <div>
+                    <span><strong>Keyword</strong></span>
+                </div>
+                <div>
+                    <span><strong>Hyperlink</strong></span>
+                </div>
+                <div></div>
+            </li>
             @foreach (var link in links)
             {
+
                 <li class="replacement-item">
 
                     <div>
@@ -38,7 +49,6 @@
                     </div>
                 </li>
             }
-            <li></li>
         </ul>
         
         <div class="input-group mb-3">
