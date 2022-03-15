@@ -1,9 +1,11 @@
 ﻿@using StrawberryShake
 @using Vantage.Web.Models
 @using Vantage.Web.Services
+@using System.Diagnostics
 @implements IDisposable
 @inject ChatClient _client
 @inject StateService _stateService
+@inject NavigationManager _navigation
 
 <div class="top-row pl-4 navbar navbar-dark">
     <a class="navbar-brand" href="">Vantage.Web</a>
@@ -76,7 +78,7 @@
 
         if (result.Data != null)
         {
-            
+
             var data = Array.Empty<IGetUsers_User_User>();
             _users = (result.Data.User ?? data).Select(t => new User()
             {
@@ -98,7 +100,14 @@
     public void Dispose()
     {
         _stateService.Notify -= OnShareState;
+        _navigation.LocationChanged -= NavigationOnLocationChanged;
+    }
+
+    private void NavigationOnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        if (e.Location.Contains("linked-chat")) return;
         _users.Clear();
+        StateHasChanged();
     }
 
 
@@ -106,6 +115,12 @@
     {
         _selected = user;
         await _stateService.ShareStateAsync(user);
+    }
+
+    protected override Task OnInitializedAsync()
+    {
+        _navigation.LocationChanged += NavigationOnLocationChanged;
+        return Task.CompletedTask;
     }
 
 }

@@ -56,6 +56,7 @@
             </div>
             <input type="text" @bind="_hyperlink"
                    @bind:event="oninput"
+                   @onkeydown="@Enter"
                    class="form-control" aria-label="Hyperlink (to the destination address)">
         </div>
         
@@ -144,7 +145,7 @@
                 });
         });
     }
-    
+
 
     protected async void OnRemoveButtonClicked(string keyword)
     {
@@ -175,5 +176,13 @@
         _hyperlink = string.Empty;
 
         StateHasChanged();
+    }
+    private async void Enter(KeyboardEventArgs e)
+    {
+        // allow enter key to send comments
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+          await OnReplaceLinkClicked(_keyword, _hyperlink);
+        }
     }
 }
