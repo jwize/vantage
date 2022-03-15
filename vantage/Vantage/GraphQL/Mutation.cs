@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HotChocolate;
@@ -14,7 +13,7 @@ namespace Vantage.GraphQL
     public class Mutation
     {
         [UseDbContext(typeof(Database))]
-        public async Task<AddUserPayload> AddUserAsync(AddUserInput input, [ScopedService] Database database)
+        public async Task<AddUserPayload> AddUserAsync(UserRecords input, [ScopedService] Database database)
         {
             var user = new User
             {
@@ -26,7 +25,7 @@ namespace Vantage.GraphQL
         }
 
         [UseDbContext(typeof(Database))]
-        public async Task<AddCommentPayload> AddCommentAsync(AddCommentInput input, [ScopedService] Database database
+        public async Task<AddCommentPayload> AddCommentAsync(CommentRecords input, [ScopedService] Database database
         ,[Service] ITopicEventSender eventSender, CancellationToken cancellationToken)
         {
             var comment = new Comment
@@ -37,14 +36,12 @@ namespace Vantage.GraphQL
 
             database.Add(comment);
             await database.SaveChangesAsync(cancellationToken);
-
             await eventSender.SendAsync(nameof(Subscription.OnCommentCreated), comment, cancellationToken);
-
             return new AddCommentPayload(comment);
         }
 
         [UseDbContext(typeof(Database))]
-        public async Task<ReplacementRecords> AddReplacementLinkAsync(AddReplacementLinkInput input,
+        public async Task<AddReplacementLinkPayload> AddReplacementLinkAsync(AddReplacementLinkInput input,
             [ScopedService] Database database, [Service] ITopicEventSender eventSender, CancellationToken cancellationToken)
         {
             var link = new ReplacementLink
@@ -55,10 +52,8 @@ namespace Vantage.GraphQL
 
             database.Add(link);
             await database.SaveChangesAsync(cancellationToken);
-
             await eventSender.SendAsync(nameof(Subscription.OnReplacementLinkCreated), link, cancellationToken);
-
-            return new ReplacementRecords(link);
+            return new AddReplacementLinkPayload(link);
         }
 
         [UseDbContext(typeof(Database))]
@@ -67,10 +62,9 @@ namespace Vantage.GraphQL
         {
             var removed = await database.ReplacementLinks.FirstOrDefaultAsync(r => r.Keyword == keyword, cancellationToken);
             database.Remove(removed);
+
             await database.SaveChangesAsync(cancellationToken);
-
             await eventSender.SendAsync(nameof(Subscription.OnReplacementLinkRemoved), removed, cancellationToken);
-
             return new RemoveReplacementLinkPayload(removed);
         }
     }

@@ -1,5 +1,4 @@
-﻿using HotChocolate;
-using HotChocolate.Types;
+﻿using HotChocolate.Types;
 using Vantage.Models;
 
 namespace Vantage.GraphQL.Comments
@@ -14,14 +13,6 @@ namespace Vantage.GraphQL.Comments
                 .ResolveWith<Resolvers>(r => r.GetUser(default!, default!))
                 .UseDbContext<Database>()
                 .Description("This is the user to which the comment belongs");
-        }
-
-        private class Resolvers
-        {
-            public User GetUser([Parent] Comment comment, [ScopedService] Database database)
-            {
-                return database.Users.Find(comment.UserId);
-            }
         }
     }
 }

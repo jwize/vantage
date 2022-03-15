@@ -1,6 +1,7 @@
 ﻿@page "/linked-chat"
 @inject ChatClient _client
 @inject StateService _stateService
+@inject CommentService _commentService
 @inject ReplacementLinkService _replacementLinkService
 @inject IJSRuntime JS
 
@@ -70,7 +71,7 @@
     protected override async Task OnInitializedAsync()
     {
         // watch for comments added
-        await _replacementLinkService.InitializeReplacementLinks();
+        await _replacementLinkService.Initialize();
 
         BeginCommentWatcher();
         BeginReplacementLinkWatcher();
@@ -124,22 +125,8 @@
             _client.OnAddedComment.Watch()
                 .Subscribe(x =>
                 {
-                    var comment = x.Data?.Created;
-
-                    var added = new Comment
-                    {
-                        Id = comment?.Id ?? 0,
-                        User = new User()
-                        {
-                            Id = comment?.UserId ?? 0,
-                            Name = comment?.User?.Name,
-                            Direction = comment?.User?.Name == "Jaime" ? Direction.Left : Direction.Right
-                        },
-                        Content = comment?.Content
-                    };
-
-                    _replacementLinkService.Hash(comment?.Content);
-
+                    var added = _commentService.Project(x.Data?.Created);
+                    _replacementLinkService.Hash(added?.Content);
                     _comments.Add(added);
                     StateHasChanged();
                 });

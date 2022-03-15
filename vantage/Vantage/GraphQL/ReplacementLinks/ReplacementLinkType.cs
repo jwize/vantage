@@ -1,6 +1,4 @@
-﻿using System.Linq;
-using HotChocolate;
-using HotChocolate.Types;
+﻿using HotChocolate.Types;
 using Vantage.Models;
 
 namespace Vantage.GraphQL.Users

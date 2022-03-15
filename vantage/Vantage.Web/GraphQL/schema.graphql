@@ -35,9 +35,9 @@ type ReplacementLink {
 }
 
 type Mutation {
-  addUser(input: AddUserInput): AddUserPayload
-  addComment(input: AddCommentInput): AddCommentPayload
-  addReplacementLink(input: AddReplacementLinkInput): ReplacementRecords
+  addUser(input: UserRecordsInput): AddUserPayload
+  addComment(input: CommentRecordsInput): AddCommentPayload
+  addReplacementLink(input: AddReplacementLinkInput): AddReplacementLinkPayload
   removeReplacementLink(keyword: String): RemoveReplacementLinkPayload
 }
 
@@ -163,7 +163,7 @@ input ComparableDateTimeOperationFilterInput {
   nlte: DateTime
 }
 
-input AddCommentInput {
+input CommentRecordsInput {
   content: String
   userId: Int!
 }
@@ -172,7 +172,7 @@ type AddCommentPayload {
   comment: Comment
 }
 
-input AddUserInput {
+input UserRecordsInput {
   name: String
 }
 
@@ -180,7 +180,7 @@ type AddUserPayload {
   user: User
 }
 
-type ReplacementRecords {
+type AddReplacementLinkPayload {
   replacementLink: ReplacementLink
 }
 
