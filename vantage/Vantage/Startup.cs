@@ -26,7 +26,7 @@ namespace Vantage
         {
             services
                 .AddPooledDbContextFactory<Database>(options =>
-                    options.UseSqlServer(_configuration.GetConnectionString("DefaultConnection")))
+                    options.UseSqlServer(_configuration["Connections:DatabaseKey"]))
                 .AddCors(setup => setup.AddPolicy(name: ClientCorsPolicy,
                     config => config.WithOrigins("https://localhost:44305")
                         .AllowAnyMethod()
