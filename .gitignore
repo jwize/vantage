@@ -349,3 +349,4 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 /vantage/Vantage/appsettings.json
+/vantage/vantage.web/graphql/generated
