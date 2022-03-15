@@ -10,6 +10,7 @@
 @using StrawberryShake
 @using StrawberryShake.Extensions
 @using Vantage.Web.Services
+@using System.Collections.Immutable
 
 
 <div class="container">
@@ -23,13 +24,13 @@
             @if (comment.User.Direction == Direction.Left)
             {
                 <div class="@(GetTextDirection(comment.User.Direction)) chat-bubble">
-                    <small>@comment.User.Name:</small> @(new MarkupString(GetReplacement(comment.Content)))
+                    <small>@comment.User.Name:</small> @(new MarkupString(_replacementLinkService.FindHashed(comment.Content)))
                 </div>
             }
             else
             {
                 <div class="@(GetTextDirection(comment.User.Direction)) chat-bubble">
-                    @(new MarkupString(GetReplacement(comment.Content))) <small>: @comment.User.Name</small>
+                    @(new MarkupString(_replacementLinkService.FindHashed(comment.Content))) <small>: @comment.User.Name</small>
                 </div>
             }
             
@@ -60,7 +61,6 @@
     private string _comment { get; set; }
     private bool _isValid => !string.IsNullOrEmpty(_comment);
     private bool _ready { get; set; }
-    private Dictionary<int, string> _hashedComments = new();
 
     private string GetTextDirection(Direction direction)
     {
@@ -109,7 +109,7 @@
                     Direction = t?.User?.Name == "Jaime" ? Direction.Left : Direction.Right
                 }
             };
-            HashReplacement(comment.Content);
+            _replacementLinkService.Hash(comment.Content);
             return comment;
 
         }).ToList();
@@ -138,36 +138,16 @@
                         Content = comment?.Content
                     };
 
-                    HashReplacement(comment?.Content);
+                    _replacementLinkService.Hash(comment?.Content);
 
                     _comments.Add(added);
                     StateHasChanged();
                 });
         });
+
     }
 
-    private string GetReplacement(string content)
-    {
-        var hash = content.GetHashCode();
-        return _hashedComments[hash];
-    }
-
-    private void HashReplacement(string content)
-    {
-        var hash = content.GetHashCode();
-        if (!_hashedComments.ContainsKey(hash))
-        {
-            _hashedComments.Add(hash, string.Empty);
-        }
-
-        var replacements = _replacementLinkService.ReplacementLinks;
-        var output = content;
-        foreach (var replacement in replacements)
-        {
-            output = output.Replace(replacement.Keyword, $"<a target='_blank' href='{replacement.Hyperlink}'>{replacement.Keyword}</a>");
-        }
-        _hashedComments[hash] = output;
-    }
+    
 
     private void BeginReplacementLinkWatcher()
     {
@@ -176,13 +156,8 @@
             _client.OnReplacementLinkCreated.Watch()
                 .Subscribe(x =>
                 {
-                    var link = x?.Data?.Created;
-                    _replacementLinkService.ReplacementLinks.Add(new ReplacementLink()
-                    {
-                        Keyword = link?.Keyword,
-                        Hyperlink = link?.Hyperlink
-                    });
-                    RefreshReplacements();
+                    _replacementLinkService.Add(x.Data.Created);
+                    _replacementLinkService.Refresh(_comments);
                     StateHasChanged();
                 });
         });
@@ -193,31 +168,14 @@
                 .Subscribe(x =>
                 {
                     var keyword = x.Data?.Removed?.Keyword;
-                    RemovedReplacementsWithKeyword(keyword);
-                    RefreshReplacements();
+                    _replacementLinkService.RemovedReplacementsWithKeyword(keyword);
+                    _replacementLinkService.Refresh(_comments);
                     StateHasChanged();
                 });
         });
     }
 
-    private void RemovedReplacementsWithKeyword(string keyword)
-    {
-        var removed = _hashedComments.Where(h => h.Value.ToLower().Contains(keyword.ToLower())).Select(h => h.Key);
-        foreach (var hash in removed)
-        {
-            _hashedComments.Remove(hash);
-        }
-    }
 
-    private void RefreshReplacements()
-    {
-        foreach (var comment in _comments)
-        {
-            HashReplacement(comment.Content);
-        }
-
-        StateHasChanged();
-    }
 
     private async Task SetInitialUser()
     {

@@ -9,15 +9,15 @@
       "dependencyInjection": true,
       "strictSchemaValidation": true,
       "hashAlgorithm": "md5",
-      "useSingleFile": true,
+      "useSingleFile": false,
       " ": "Default",
       "outputDirectoryName": "Generated",
       "noStore": false,
       "emitGeneratedCode": true,
       "razorComponents": false,
       "records": {
-        "inputs": true,
-        "entities": true
+        "inputs": false,
+        "entities": false
       },
       "transportProfiles": [
         {
