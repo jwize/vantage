@@ -34,10 +34,6 @@ namespace Vantage
                         .AllowAnyHeader()
                 ))
                 .AddGraphQLServer()
-                .ModifyOptions(options =>
-                {
-                    options.DefaultBindingBehavior = BindingBehavior.Explicit;
-                })
                 .AddType<UserType>()
                 .AddType<CommentType>()
                 .AddType<ReplacementLinkType>()
